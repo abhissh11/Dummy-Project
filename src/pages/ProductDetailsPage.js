@@ -66,7 +66,7 @@ const ProductPage = () => {
   };
 
   return (
-    <div>
+    <div className="">
       <Button
         type="primary"
         onClick={handleCompare}
