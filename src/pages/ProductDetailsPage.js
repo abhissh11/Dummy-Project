@@ -1,32 +1,32 @@
-import React, { useState } from "react";
-import { Button, Table, Checkbox } from "antd";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Table, Checkbox, Button } from "antd";
+import { useNavigate } from "react-router-dom";
 
-const ProductPage = () => {
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [dataSource, setDataSource] = useState(() =>
-    Array.from({ length: 10 }).map((_, i) => ({
-      key: i,
-      name: `Product ${i}`,
-      price: `$${(i + 1) * 10}`,
-      category: `Category ${i % 3}`,
-      rating: `${Math.floor(Math.random() * 5) + 1} stars`,
-      selected: false,
-    }))
-  );
+const AllProducts = () => {
+  const [products, setProducts] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const navigate = useNavigate();
 
-  const handleSelect = (key) => {
-    const updatedData = dataSource.map((item) =>
-      item.key === key ? { ...item, selected: !item.selected } : item
-    );
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const response = await axios.get("https://dummyjson.com/products");
+      setProducts(response.data.products);
+    };
 
-    const newSelectedRowKeys = updatedData
-      .filter((item) => item.selected)
-      .map((item) => item.key);
+    fetchProducts();
+  }, []);
 
-    if (newSelectedRowKeys.length <= 4) {
-      setSelectedRowKeys(newSelectedRowKeys);
-      setDataSource(updatedData);
+  const handleSelect = (product) => {
+    let updatedSelection = [...selectedProducts];
+    if (updatedSelection.includes(product)) {
+      updatedSelection = updatedSelection.filter((p) => p.id !== product.id);
+    } else {
+      if (updatedSelection.length < 4) {
+        updatedSelection.push(product);
+      }
     }
+    setSelectedProducts(updatedSelection);
   };
 
   const columns = [
@@ -35,56 +35,56 @@ const ProductPage = () => {
       dataIndex: "select",
       render: (_, record) => (
         <Checkbox
-          checked={record.selected}
-          onChange={() => handleSelect(record.key)}
-          disabled={selectedRowKeys.length >= 4 && !record.selected}
+          checked={selectedProducts.includes(record)}
+          onChange={() => handleSelect(record)}
+          disabled={
+            selectedProducts.length >= 4 && !selectedProducts.includes(record)
+          }
         />
       ),
     },
     {
-      title: "Name",
-      dataIndex: "name",
+      title: "Title",
+      dataIndex: "title",
     },
     {
       title: "Price",
       dataIndex: "price",
     },
     {
-      title: "Category",
-      dataIndex: "category",
+      title: "Brand",
+      dataIndex: "brand",
     },
     {
-      title: "Rating",
-      dataIndex: "rating",
+      title: "Category",
+      dataIndex: "category",
     },
   ];
 
   const handleCompare = () => {
-    const selectedProducts = dataSource.filter((item) => item.selected);
-    console.log("Selected products for comparison:", selectedProducts);
-    // Implement comparison logic here
+    navigate("/compare-page", { state: { products: selectedProducts } });
   };
 
   return (
-    <div className="">
+    <div>
       <Button
         type="primary"
         onClick={handleCompare}
-        disabled={selectedRowKeys.length === 0}
+        disabled={selectedProducts.length === 0}
       >
         Compare Products
       </Button>
-      {selectedRowKeys.length >= 4 && (
+      {selectedProducts.length >= 4 && (
         <p style={{ color: "red" }}>You can select a maximum of 4 products.</p>
       )}
       <Table
         columns={columns}
-        dataSource={dataSource}
+        dataSource={products}
+        rowKey="id"
         pagination={{ pageSize: 5 }}
-        rowKey="key"
       />
     </div>
   );
 };
 
-export default ProductPage;
+export default AllProducts;
